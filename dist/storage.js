@@ -56,13 +56,13 @@ function getGlobalIssuesFileUri() {
         const home = os.homedir();
         if (process.platform === 'win32') {
             const base = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
-            p = path.join(base, 'my-error-logger', 'global-log.json');
+            p = path.join(base, 'issue-logger', 'global-log.json');
         }
         else if (process.platform === 'darwin') {
-            p = path.join(home, 'Library', 'Application Support', 'my-error-logger', 'global-log.json');
+            p = path.join(home, 'Library', 'Application Support', 'issue-logger', 'global-log.json');
         }
         else {
-            p = path.join(home, '.config', 'my-error-logger', 'global-log.json');
+            p = path.join(home, '.config', 'issue-logger', 'global-log.json');
         }
     }
     return vscode.Uri.file(p);
