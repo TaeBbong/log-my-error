@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { Issue } from './types';
-import { loadIssues, saveIssues } from './storage';
+import { loadIssues, saveIssues, loadGlobalIssues } from './storage';
 
 function issueToMarkdown(issue: Issue): string {
   const parts = [
@@ -20,6 +20,9 @@ function issueToMarkdown(issue: Issue): string {
   }
   if (issue.resolved) {
     parts.push('', `**Resolved**: ${issue.resolution}`);
+    if (issue.resolvedSnippet) {
+      parts.push('', '```', issue.resolvedSnippet, '```');
+    }
   }
   return parts.join('\n');
 }
@@ -31,8 +34,8 @@ export async function registerCommands(
 
   const logCmd = vscode.commands.registerCommand('myErrorLogger.log', async () => {
     const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.selection.isEmpty) {
-      vscode.window.showInformationMessage('선택된 코드가 없습니다.');
+    if (!editor) {
+      vscode.window.showInformationMessage('활성 편집기가 없습니다.');
       return;
     }
 
@@ -51,7 +54,9 @@ export async function registerCommands(
     if (!picked) return;
 
     const selectionText = editor.document.getText(editor.selection);
-    const range = editor.selection;
+    const range = editor.selection.isEmpty
+      ? new vscode.Range(editor.selection.start, editor.selection.start)
+      : editor.selection;
     const filePath = editor.document.uri.fsPath;
 
     if (picked.id === 'new') {
@@ -115,6 +120,7 @@ export async function registerCommands(
 
       issue.resolved = true;
       issue.resolution = fixDesc;
+      issue.resolvedSnippet = selectionText;
       await saveIssues(context, issues);
       vscode.window.showInformationMessage(`이슈 “${issue.title}” 해결 완료!`);
     }
@@ -152,6 +158,35 @@ export async function registerCommands(
     }
   );
 
+  const showGlobalCmd = vscode.commands.registerCommand(
+    'myErrorLogger.showGlobalIssues',
+    async () => {
+      const globalIssues = await loadGlobalIssues();
+      if (!globalIssues.length) {
+        vscode.window.showInformationMessage('글로벌 로그가 없습니다.');
+        return;
+      }
+      const picked = await vscode.window.showQuickPick(
+        globalIssues.map((i) => ({
+          label: i.resolved ? `✅ ${i.title}` : `❗ ${i.title}`,
+          detail: `${i.filePath}:${i.range.start.line + 1}`,
+          description: i.resolved ? 'resolved' : 'open',
+          issue: i,
+        })),
+        { title: 'Global My-Extension Issues', matchOnDetail: true }
+      );
+      if (!picked) return;
+      const issue = (picked as any).issue as Issue;
+      const uri = vscode.Uri.file(issue.filePath);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      const ed = await vscode.window.showTextDocument(doc);
+      ed.selection = new vscode.Selection(issue.range.start, issue.range.end);
+      ed.revealRange(issue.range, vscode.TextEditorRevealType.InCenter);
+      if (issue.resolved) {
+        vscode.window.showInformationMessage(`Resolution: ${issue.resolution}`);
+      }
+    }
+  );
   const addTagCmd = vscode.commands.registerCommand(
     'myErrorLogger.addTag',
     async () => {
@@ -187,5 +222,5 @@ export async function registerCommands(
     }
   );
 
-  context.subscriptions.push(logCmd, showCmd, addTagCmd, exportCmd);
+  context.subscriptions.push(logCmd, showCmd, showGlobalCmd, addTagCmd, exportCmd);
 }

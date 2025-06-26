@@ -9,6 +9,7 @@ export interface Issue {
   range: vscode.Range;
   resolved: boolean;
   resolution?: string;
+  resolvedSnippet?: string;
   tags: string[];
 }
 

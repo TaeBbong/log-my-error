@@ -13,6 +13,7 @@
   "activationEvents": [
     "onCommand:myErrorLogger.log",
     "onCommand:myErrorLogger.showIssues",
+    "onCommand:myErrorLogger.showGlobalIssues",
     "onCommand:myErrorLogger.addTag",
     "onCommand:myErrorLogger.exportIssue"
   ],
@@ -26,6 +27,10 @@
       {
         "command": "myErrorLogger.showIssues",
         "title": "IssueLogger: Show Issues"
+      },
+      {
+        "command": "myErrorLogger.showGlobalIssues",
+        "title": "IssueLogger: Show Issues(Global)"
       },
       {
         "command": "myErrorLogger.addTag",

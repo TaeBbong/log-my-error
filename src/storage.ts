@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { TextEncoder, TextDecoder } from 'util';
+import * as os from 'os';
+import * as path from 'path';
 import { Issue, PlainIssue, toPlain, fromPlain } from './types';
 
 function getIssuesFileUri(): vscode.Uri | undefined {
@@ -7,14 +9,31 @@ function getIssuesFileUri(): vscode.Uri | undefined {
   if (!workspaceFolder) {
     return undefined;
   }
-  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logs.json');
+  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logger.json');
 }
 
 function getGlobalIssuesFileUri(): vscode.Uri | undefined {
-  const p = vscode.workspace
+  let p = vscode.workspace
     .getConfiguration('myErrorLogger')
     .get<string>('globalLogPath');
-  return p ? vscode.Uri.file(p) : undefined;
+  if (!p) {
+    const home = os.homedir();
+    if (process.platform === 'win32') {
+      const base = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+      p = path.join(base, 'my-error-logger', 'global-log.json');
+    } else if (process.platform === 'darwin') {
+      p = path.join(
+        home,
+        'Library',
+        'Application Support',
+        'my-error-logger',
+        'global-log.json'
+      );
+    } else {
+      p = path.join(home, '.config', 'my-error-logger', 'global-log.json');
+    }
+  }
+  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logs.json');
 }
 
 async function loadFileIssues(fileUri: vscode.Uri): Promise<Issue[]> {
@@ -53,7 +72,7 @@ async function saveFileIssues(fileUri: vscode.Uri, issues: Issue[]): Promise<voi
   await vscode.workspace.fs.writeFile(fileUri, encoded);
 }
 
-async function loadGlobalIssues(): Promise<Issue[]> {
+export async function loadGlobalIssues(): Promise<Issue[]> {
   const fileUri = getGlobalIssuesFileUri();
   if (!fileUri) return [];
   return loadFileIssues(fileUri);
