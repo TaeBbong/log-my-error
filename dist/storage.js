@@ -65,6 +65,9 @@ function getGlobalIssuesFileUri() {
             p = path.join(home, '.config', 'issue-logger', 'global-log.json');
         }
     }
+    if (path.extname(p).toLowerCase() !== ".json") {
+        p = path.join(p, "global-log.json");
+    }
     return vscode.Uri.file(p);
 }
 async function loadFileIssues(fileUri) {
