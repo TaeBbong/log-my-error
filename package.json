@@ -11,7 +11,10 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:myErrorLogger.log"
+    "onCommand:myErrorLogger.log",
+    "onCommand:myErrorLogger.showIssues",
+    "onCommand:myErrorLogger.addTag",
+    "onCommand:myErrorLogger.exportIssue"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -19,6 +22,18 @@
       {
         "command": "myErrorLogger.log",
         "title": "Log with My-Extension"
+      },
+      {
+        "command": "myErrorLogger.showIssues",
+        "title": "Show My-Extension Issues"
+      },
+      {
+        "command": "myErrorLogger.addTag",
+        "title": "Register My-Extension Tag"
+      },
+      {
+        "command": "myErrorLogger.exportIssue",
+        "title": "Export Issue to Markdown"
       }
     ],
     "menus": {
@@ -28,6 +43,17 @@
           "when": "editorHasSelection"
         }
       ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "My Error Logger",
+      "properties": {
+        "myErrorLogger.globalLogPath": {
+          "type": "string",
+          "description": "Absolute path for global issue log JSON file",
+          "default": ""
+        }
+      }
     }
   },
   "scripts": {
