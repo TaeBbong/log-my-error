@@ -34,22 +34,38 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadIssues = loadIssues;
+exports.loadGlobalIssues = loadGlobalIssues;
 exports.saveIssues = saveIssues;
 const vscode = __importStar(require("vscode"));
 const util_1 = require("util");
+const os = __importStar(require("os"));
+const path = __importStar(require("path"));
 const types_1 = require("./types");
 function getIssuesFileUri() {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
         return undefined;
     }
-    return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logs.json');
+    return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logger.json');
 }
 function getGlobalIssuesFileUri() {
-    const p = vscode.workspace
+    let p = vscode.workspace
         .getConfiguration('myErrorLogger')
         .get('globalLogPath');
-    return p ? vscode.Uri.file(p) : undefined;
+    if (!p) {
+        const home = os.homedir();
+        if (process.platform === 'win32') {
+            const base = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+            p = path.join(base, 'my-error-logger', 'global-log.json');
+        }
+        else if (process.platform === 'darwin') {
+            p = path.join(home, 'Library', 'Application Support', 'my-error-logger', 'global-log.json');
+        }
+        else {
+            p = path.join(home, '.config', 'my-error-logger', 'global-log.json');
+        }
+    }
+    return vscode.Uri.file(p);
 }
 async function loadFileIssues(fileUri) {
     try {
