@@ -1,11 +1,12 @@
 {
   "name": "issue-logger",
-  "displayName": "My Error Logger",
+  "displayName": "Issue Logger",
   "description": "Log troublesome code snippets and attach fixes without leaving VS Code.",
   "version": "0.0.1",
-  "publisher": "your-name",
+  "publisher": "TaeBbong",
+  "icon": "icon.png",
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.101.0"
   },
   "categories": [
     "Other"
@@ -51,7 +52,7 @@
     },
     "configuration": {
       "type": "object",
-      "title": "My Error Logger",
+      "title": "Issue Logger",
       "properties": {
         "myErrorLogger.globalLogPath": {
           "type": "string",
