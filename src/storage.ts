@@ -7,7 +7,7 @@ function getIssuesFileUri(): vscode.Uri | undefined {
   if (!workspaceFolder) {
     return undefined;
   }
-  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'my-error-logger.json');
+  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logs.json');
 }
 
 function getGlobalIssuesFileUri(): vscode.Uri | undefined {
