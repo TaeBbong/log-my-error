@@ -187,7 +187,6 @@ export async function registerCommands(
       }
     }
   );
-
   const addTagCmd = vscode.commands.registerCommand(
     'myErrorLogger.addTag',
     async () => {

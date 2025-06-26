@@ -1,5 +1,5 @@
 {
-  "name": "my-error-logger",
+  "name": "issue-logger",
   "displayName": "My Error Logger",
   "description": "Log troublesome code snippets and attach fixes without leaving VS Code.",
   "version": "0.0.1",
@@ -22,23 +22,23 @@
     "commands": [
       {
         "command": "myErrorLogger.log",
-        "title": "Log with My-Extension"
+        "title": "IssueLogger: Log"
       },
       {
         "command": "myErrorLogger.showIssues",
-        "title": "Show My-Extension Issues"
+        "title": "IssueLogger: Show Issues"
       },
       {
         "command": "myErrorLogger.showGlobalIssues",
-        "title": "Show Global My-Extension Issues"
+        "title": "IssueLogger: Show Issues(Global)"
       },
       {
         "command": "myErrorLogger.addTag",
-        "title": "Register My-Extension Tag"
+        "title": "IssueLogger: Register Tag"
       },
       {
         "command": "myErrorLogger.exportIssue",
-        "title": "Export Issue to Markdown"
+        "title": "IssueLogger: Export Issue to Markdown"
       }
     ],
     "menus": {
