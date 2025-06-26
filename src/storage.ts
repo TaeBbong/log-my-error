@@ -33,7 +33,7 @@ function getGlobalIssuesFileUri(): vscode.Uri | undefined {
       p = path.join(home, '.config', 'my-error-logger', 'global-log.json');
     }
   }
-  return vscode.Uri.joinPath(workspaceFolder.uri, '.vscode', 'issue-logs.json');
+  return vscode.Uri.file(p);
 }
 
 async function loadFileIssues(fileUri: vscode.Uri): Promise<Issue[]> {
