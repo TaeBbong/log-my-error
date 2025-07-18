@@ -57,6 +57,98 @@ function issueToMarkdown(issue, includeProjectName = false) {
     }
     return parts.join('\n');
 }
+function showMarkdownInWebView(context, title, mdContent) {
+    const panel = vscode.window.createWebviewPanel('markdownExport', title, vscode.ViewColumn.One, {
+        enableScripts: true,
+        localResourceRoots: []
+    });
+    panel.webview.onDidReceiveMessage(message => {
+        switch (message.command) {
+            case 'copyToClipboard':
+                vscode.env.clipboard.writeText(message.text);
+                vscode.window.showInformationMessage('Markdown copied to clipboard!');
+                return;
+        }
+    }, undefined, context.subscriptions);
+    panel.webview.html = getWebviewContent(panel.webview, mdContent);
+}
+function getWebviewContent(webview, mdContent) {
+    const nonce = getNonce();
+    // Escape the markdown content for safe inclusion in the HTML pre tag
+    const escapedMdContent = escapeHtml(mdContent);
+    const jsonContent = JSON.stringify(mdContent);
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Export</title>
+    <style>
+        body {
+            padding: 20px;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+            font-family: var(--vscode-font-family);
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: var(--vscode-text-block-quote-background);
+            border: 1px solid var(--vscode-text-block-quote-border);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border: none;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: var(--vscode-button-hover-background);
+        }
+    </style>
+</head>
+<body>
+    <h1>Markdown Preview</h1>
+    <pre><code>${escapedMdContent}</code></pre>
+    <button id="copyButton">Copy to Clipboard</button>
+
+    <script nonce="${nonce}">
+        const vscode = acquireVsCodeApi();
+        const copyButton = document.getElementById('copyButton');
+        const markdownContent = JSON.parse(${jsonContent});
+
+        copyButton.addEventListener('click', () => {
+            vscode.postMessage({
+                command: 'copyToClipboard',
+                text: markdownContent
+            });
+        });
+    </script>
+</body>
+</html>`;
+}
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 async function registerCommands(context) {
     let issues = await (0, storage_1.loadIssues)(context);
     const logCmd = vscode.commands.registerCommand('myErrorLogger.log', async () => {
@@ -212,14 +304,14 @@ async function registerCommands(context) {
         }
         const picked = await vscode.window.showQuickPick(issues.map((i) => ({
             label: i.title,
+            description: i.projectName ? `Project: ${i.projectName}` : '',
             issue: i
-        })), { title: 'Markdown으로 내보낼 이슈 선택' });
+        })), { title: 'Markdown으로 내보낼 이슈 선택', matchOnDescription: true });
         if (!picked)
             return;
         const issue = picked.issue;
         const md = issueToMarkdown(issue, true);
-        await vscode.env.clipboard.writeText(md);
-        vscode.window.showInformationMessage('Markdown이 클립보드에 복사되었습니다.');
+        showMarkdownInWebView(context, `Export: ${issue.title}`, md);
     });
     const exportAllCmd = vscode.commands.registerCommand('myErrorLogger.exportAllIssuesToMarkdown', async () => {
         if (!issues.length) {
@@ -229,8 +321,7 @@ async function registerCommands(context) {
         const projectName = vscode.workspace.name ?? 'Current Project';
         const title = `# ${projectName} Issues\n\n`;
         const md = title + issues.map(issue => issueToMarkdown(issue, false)).join('\n\n---\n\n');
-        await vscode.env.clipboard.writeText(md);
-        vscode.window.showInformationMessage('모든 이슈가 Markdown으로 클립보드에 복사되었습니다.');
+        showMarkdownInWebView(context, `${projectName} Issues`, md);
     });
     const exportGlobalCmd = vscode.commands.registerCommand('myErrorLogger.exportGlobalIssuesToMarkdown', async () => {
         const globalIssues = await (0, storage_1.loadGlobalIssues)();
@@ -240,8 +331,7 @@ async function registerCommands(context) {
         }
         const title = `# Global Issues\n\n`;
         const md = title + globalIssues.map(issue => issueToMarkdown(issue, true)).join('\n\n---\n\n');
-        await vscode.env.clipboard.writeText(md);
-        vscode.window.showInformationMessage('모든 글로벌 이슈가 Markdown으로 클립보드에 복사되었습니다.');
+        showMarkdownInWebView(context, 'Global Issues', md);
     });
     context.subscriptions.push(logCmd, showCmd, showGlobalCmd, addTagCmd, exportCmd, exportAllCmd, exportGlobalCmd);
 }
