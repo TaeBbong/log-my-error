@@ -3,18 +3,26 @@ import { v4 as uuidv4 } from 'uuid';
 import { Issue } from './types';
 import { loadIssues, saveIssues, loadGlobalIssues } from './storage';
 
-function issueToMarkdown(issue: Issue): string {
+function issueToMarkdown(issue: Issue, includeProjectName = false): string {
   const parts = [
     `### ${issue.title}`,
     '',
+  ];
+
+  if (includeProjectName && issue.projectName) {
+      parts.push(`**Project**: ${issue.projectName}`, '');
+  }
+
+  parts.push(
     issue.description,
     '',
     '```',
     issue.snippet,
     '```',
     '',
-    `File: ${issue.filePath}:${issue.range.start.line + 1}`,
-  ];
+    `File: ${issue.filePath}:${issue.range.start.line + 1}`
+  );
+
   if (issue.tags.length) {
     parts.push('', `Tags: ${issue.tags.join(', ')}`);
   }
@@ -106,6 +114,7 @@ export async function registerCommands(
         range,
         resolved: false,
         tags,
+        projectName: vscode.workspace.name,
       };
       issues.push(issue);
       await saveIssues(context, issues);
@@ -138,10 +147,10 @@ export async function registerCommands(
         issues.map((i) => ({
           label: i.resolved ? `✅ ${i.title}` : `❗ ${i.title}`,
           detail: `${i.filePath}:${i.range.start.line + 1}`,
-          description: i.resolved ? 'resolved' : 'open',
+          description: i.projectName ? `Project: ${i.projectName}` : (i.resolved ? 'resolved' : 'open'),
           issue: i,
         })),
-        { title: 'My-Extension Issues', matchOnDetail: true }
+        { title: 'My-Extension Issues', matchOnDetail: true, matchOnDescription: true }
       );
       if (!picked) return;
 
@@ -170,10 +179,10 @@ export async function registerCommands(
         globalIssues.map((i) => ({
           label: i.resolved ? `✅ ${i.title}` : `❗ ${i.title}`,
           detail: `${i.filePath}:${i.range.start.line + 1}`,
-          description: i.resolved ? 'resolved' : 'open',
+          description: i.projectName ? `Project: ${i.projectName}` : (i.resolved ? 'resolved' : 'open'),
           issue: i,
         })),
-        { title: 'Global My-Extension Issues', matchOnDetail: true }
+        { title: 'Global My-Extension Issues', matchOnDetail: true, matchOnDescription: true }
       );
       if (!picked) return;
       const issue = (picked as any).issue as Issue;
@@ -211,16 +220,62 @@ export async function registerCommands(
         return;
       }
       const picked = await vscode.window.showQuickPick(
-        issues.map((i) => ({ label: i.title, issue: i })),
-        { title: 'Markdown으로 내보낼 이슈 선택' }
+        issues.map((i) => ({
+          label: i.title,
+          description: i.projectName ? `Project: ${i.projectName}` : '',
+          issue: i
+        })),
+        { title: 'Markdown으로 내보낼 이슈 선택', matchOnDescription: true }
       );
       if (!picked) return;
       const issue = (picked as any).issue as Issue;
-      const md = issueToMarkdown(issue);
+      const md = issueToMarkdown(issue, true);
       await vscode.env.clipboard.writeText(md);
       vscode.window.showInformationMessage('Markdown이 클립보드에 복사되었습니다.');
     }
   );
 
-  context.subscriptions.push(logCmd, showCmd, showGlobalCmd, addTagCmd, exportCmd);
+  const exportAllCmd = vscode.commands.registerCommand(
+    'myErrorLogger.exportAllIssuesToMarkdown',
+    async () => {
+      if (!issues.length) {
+        vscode.window.showInformationMessage('저장된 이슈가 없습니다.');
+        return;
+      }
+      const projectName = vscode.workspace.name ?? 'Current Project';
+      const title = `# ${projectName} Issues\n\n`;
+      const md = title + issues.map(issue => issueToMarkdown(issue, false)).join('\n\n---\n\n');
+      await vscode.env.clipboard.writeText(md);
+      vscode.window.showInformationMessage(
+        '모든 이슈가 Markdown으로 클립보드에 복사되었습니다.'
+      );
+    }
+  );
+
+  const exportGlobalCmd = vscode.commands.registerCommand(
+    'myErrorLogger.exportGlobalIssuesToMarkdown',
+    async () => {
+      const globalIssues = await loadGlobalIssues();
+      if (!globalIssues.length) {
+        vscode.window.showInformationMessage('글로벌 로그가 없습니다.');
+        return;
+      }
+      const title = `# Global Issues\n\n`;
+      const md = title + globalIssues.map(issue => issueToMarkdown(issue, true)).join('\n\n---\n\n');
+      await vscode.env.clipboard.writeText(md);
+      vscode.window.showInformationMessage(
+        '모든 글로벌 이슈가 Markdown으로 클립보드에 복사되었습니다.'
+      );
+    }
+  );
+
+  context.subscriptions.push(
+    logCmd,
+    showCmd,
+    showGlobalCmd,
+    addTagCmd,
+    exportCmd,
+    exportAllCmd,
+    exportGlobalCmd
+  );
 }

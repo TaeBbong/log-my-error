@@ -11,6 +11,7 @@ export interface Issue {
   resolution?: string;
   resolvedSnippet?: string;
   tags: string[];
+  projectName?: string;
 }
 
 export interface PlainIssue extends Omit<Issue, 'range'> {

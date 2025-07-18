@@ -2,7 +2,7 @@
   "name": "issue-logger",
   "displayName": "Issue Logger",
   "description": "Log troublesome code snippets and attach fixes without leaving VS Code.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "TaeBbong",
   "icon": "icon.png",
   "engines": {
@@ -16,7 +16,9 @@
     "onCommand:myErrorLogger.showIssues",
     "onCommand:myErrorLogger.showGlobalIssues",
     "onCommand:myErrorLogger.addTag",
-    "onCommand:myErrorLogger.exportIssue"
+    "onCommand:myErrorLogger.exportIssue",
+    "onCommand:myErrorLogger.exportAllIssuesToMarkdown",
+    "onCommand:myErrorLogger.exportGlobalIssuesToMarkdown"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -40,6 +42,14 @@
       {
         "command": "myErrorLogger.exportIssue",
         "title": "IssueLogger: Export Issue to Markdown"
+      },
+      {
+        "command": "myErrorLogger.exportAllIssuesToMarkdown",
+        "title": "IssueLogger: Export All Issues in Project to Markdown"
+      },
+      {
+        "command": "myErrorLogger.exportGlobalIssuesToMarkdown",
+        "title": "IssueLogger: Export All Global Issues to Markdown"
       }
     ],
     "menus": {
